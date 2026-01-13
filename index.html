@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pop Word - Elastic Button Update</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #ff4757; --secondary: #2f3542; --accent: #ffa502; --success: #2ed573; --gold: #ffd700; --blue: #1e90ff; --purple: #a29bfe; --dark-green: #218c74; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #f1f2f6; font-family: 'Kanit', sans-serif; overflow: hidden; user-select: none; touch-action: manipulation; transition: background 0.5s; }
+
+        .floating-emoji { position: absolute; pointer-events: none; z-index: 1; animation: floatUp linear infinite; opacity: 0.6; }
+        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity: 0; } 100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } }
+
+        .top-right-menu { position: fixed; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+        .nav-btn { width: 55px; height: 55px; border-radius: 15px; border: none; font-size: 1.5rem; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        #game-content { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .header { position: fixed; top: 20px; text-align: center; z-index: 50; }
+        #points-display { font-size: 3rem; color: var(--success); font-weight: bold; text-shadow: 2px 2px 0px white; }
+
+        .side-menu { position: absolute; top: 100px; left: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 50; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
+        .menu-btn { padding: 10px; background: var(--secondary); color: white; border: none; border-radius: 12px; font-size: 0.75rem; box-shadow: 0 4px 0 #1a1e27; cursor: pointer; min-width: 125px; }
+
+        /* --- แก้ไขส่วนปุ่มคลิกใหม่ (Elastic Effect) --- */
+        #button-container { position: relative; width: 320px; height: 320px; display: flex; align-items: center; justify-content: center; z-index: 20; }
+        
+        #main-button { 
+            width: 200px; height: 200px; background: white; border: none;
+            display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; 
+            cursor: pointer; text-align: center;
+            box-shadow: inset 0 0 0 10px var(--primary);
+            z-index: 10;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* เพิ่มความเด้ง */
+            will-change: transform;
+        }
+
+        /* เมื่อถูกกด (กดค้างไว้) */
+        #main-button:active { 
+            transform: scale(0.85); /* หดตัวลงตอนนิ้วกด */
+        }
+
+        /* คลาสสำหรับ Effect ตอนคลิกเสร็จ (ขยายแล้วหด) */
+        .pop-click {
+            animation: popImpact 0.3s ease-out;
+        }
+
+        @keyframes popImpact {
+            0% { transform: scale(0.85); }
+            50% { transform: scale(1.15); } /* ขยายให้ใหญ่กว่าปกติเล็กน้อย */
+            100% { transform: scale(1); }
+        }
+        /* ------------------------------------------- */
+
+        .deco-slot { position: absolute; pointer-events: none; display: none; z-index: 20; font-size: 70px; transition: transform 0.15s; }
+        #deco-crown { top: -45px; left: 50%; transform: translateX(-50%); }
+        #deco-wings { width: 350px; height: 200px; background: url('https://i.imgur.com/rM7Y7r7.png') no-repeat center/contain; z-index: 5; opacity: 0.7; }
+        #deco-cat { bottom: 20px; left: -10px; }
+        #deco-dog { bottom: 20px; right: -10px; }
+        #deco-heart { top: 25%; left: 35%; font-size: 50px; opacity: 0.6; }
+        #deco-star { top: -10px; right: 10px; font-size: 50px; }
+
+        /* Shapes */
+        .shape-circle { clip-path: circle(50% at 50% 50%); }
+        .shape-square { clip-path: inset(0 0 0 0); }
+        .shape-triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+        .shape-pentagon { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+        .shape-hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+        .shape-star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+        .shape-heart { clip-path: polygon(50% 20%, 80% 0%, 100% 20%, 100% 50%, 50% 95%, 0% 50%, 0% 20%, 20% 0%); }
+        .shape-flower { clip-path: polygon(50% 0%, 80% 10%, 100% 35%, 90% 60%, 100% 85%, 70% 95%, 50% 80%, 30% 95%, 0% 85%, 10% 60%, 0% 35%, 20% 10%); }
+
+        #word-bar { position: fixed; bottom: 30px; display: flex; gap: 10px; overflow-x: auto; width: 100%; padding: 10px 20px; box-sizing: border-box; z-index: 50; scrollbar-width: none; }
+        .word-tag { padding: 8px 20px; background: white; border: 3px solid var(--primary); border-radius: 25px; white-space: nowrap; font-weight: bold; cursor: pointer; }
+        .word-tag.active { background: var(--primary); color: white; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .modal { width: 95%; max-width: 500px; background: white; border-radius: 30px; padding: 25px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .shop-section { margin-bottom: 20px; padding: 15px; border-radius: 20px; background: #f8f9fa; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .item-card { padding: 12px; background: white; border: 2px solid #eee; border-radius: 15px; text-align: center; cursor: pointer; font-size: 0.8rem; }
+        .item-card.equipped { background: var(--dark-green) !important; color: white !important; font-weight: bold; }
+        .item-card.owned { background: #dff9fb; border-color: var(--blue); }
+
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--secondary); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-box { background: white; padding: 30px; border-radius: 25px; width: 85%; max-width: 350px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h1 style="color:var(--primary); margin:0;">Pop Word</h1>
+            <p>เวอร์ชันเพิ่มความเด้ง (Elastic Update)</p>
+            <input type="text" id="user-in" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;" placeholder="ชื่อเล่น">
+            <input type="password" id="pass-in" style="width:100%; padding:12px; margin:10px 0; border-radius:10px; border:1px solid #ddd; box-sizing:border-box;" placeholder="รหัสผ่าน">
+            <button class="menu-btn" style="width:100%; padding:15px; font-size:1rem; box-shadow:none;" onclick="login()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="game-content">
+        <div class="top-right-menu">
+            <button class="nav-btn" style="background:var(--gold)" onclick="openUI('rank-ui')">🏆</button>
+            <button class="nav-btn" style="background:var(--accent)" onclick="openUI('shop-ui')">🛒</button>
+        </div>
+
+        <div class="header">
+            <div id="points-display">แต้ม: 0</div>
+            <div style="color:#747d8c">คลิกสะสม: <span id="total-clicks">0</span></div>
+        </div>
+
+        <div class="side-menu" id="music-btns"></div>
+
+        <div id="button-container">
+            <div id="deco-crown" class="deco-slot">👑</div>
+            <div id="deco-wings" class="deco-slot"></div>
+            <div id="deco-cat" class="deco-slot">🐱</div>
+            <div id="deco-dog" class="deco-slot">🐶</div>
+            <div id="deco-heart" class="deco-slot">❤️</div>
+            <div id="deco-star" class="deco-slot">⭐</div>
+            <div id="main-button" onclick="doClick()">ต้อม</div>
+        </div>
+
+        <div id="word-bar"></div>
+    </div>
+
+    <div id="shop-ui" class="overlay">
+        <div class="modal">
+            <span style="float:right; cursor:pointer; font-size:2rem; line-height:1;" onclick="closeUI('shop-ui')">×</span>
+            <h2 style="text-align:center;">🛒 ร้านค้า Pop Word</h2>
+            <div class="shop-section"><p>🎩 ของแต่งกาย (50 แต้ม)</p><div class="shop-grid" id="grid-decos"></div></div>
+            <div class="shop-section"><p>💠 รูปทรงปุ่ม (200 แต้ม)</p><div class="shop-grid" id="grid-shapes"></div></div>
+            <div class="shop-section"><p>💬 หมวดคำศัพท์ (250 แต้ม)</p><button class="menu-btn" style="width:100%; margin-bottom:10px; background:var(--purple); box-shadow:none;" onclick="buyCustomWord()">✨ สร้างชื่อเอง (300 แต้ม)</button><div class="shop-grid" id="grid-words"></div></div>
+            <div class="shop-section"><p>🎵 เพลงใหม่ (100 แต้ม)</p><div class="shop-grid" id="grid-music"></div></div>
+            <div class="shop-section"><p>🌈 พื้นหลังลอยได้ (50 แต้ม)</p><div class="shop-grid" id="grid-bg"></div></div>
+        </div>
+    </div>
+
+    <div id="rank-ui" class="overlay"><div class="modal"><span style="float:right; cursor:pointer; font-size:2rem;" onclick="closeUI('rank-ui')">×</span><h2 style="text-align:center;">🏆 อันดับ</h2><div id="rank-box"></div></div></div>
+
+    <script>
+        let currentU = "";
+        const MASTER = {
+            decos: [{id:'crown',n:'มงกุฎ'}, {id:'wings',n:'ปีก'}, {id:'cat',n:'แมว'}, {id:'dog',n:'หมา'}, {id:'heart',n:'หัวใจ'}, {id:'star',n:'ดาว'}],
+            shapes: [{id:'shape-circle',n:'วงกลม'}, {id:'shape-square',n:'สี่เหลี่ยม'}, {id:'shape-triangle',n:'สามเหลี่ยม'}, {id:'shape-pentagon',n:'ห้าเหลี่ยม'}, {id:'shape-hexagon',n:'หกเหลี่ยม'}, {id:'shape-star',n:'ดาว'}, {id:'shape-heart',n:'หัวใจ'}, {id:'shape-flower',n:'ดอกไม้'}],
+            music: ["ต้อมและอุ้ย", "สกิบีดี้", "เป็นจั่งได๋", "ไก้ไก่ไก้ไก่", "เนสเป็นเก", "ผมเป็นเก", "พ่อมึงอะ", "แม่มึงอะ", "เก"],
+            words: ["ต้อม", "อุ้ย", "ทม", "เพ็ญ", "ฟ้า", "แซน", "ศรี", "กำไล", "กิ๊ก", "เปิ้ล", "กุ้ง", "จอร์ด", "อ็อด", "พีรวิทย์", "อ้อม", "แนนโน้ะ", "เจ้ก", "นิกก้า", "เตี้ย", "เปรต", "อ้วน", "ไก่", "กาก", "พ่อมึงตาย", "แม่มึงตาย", "เนส", "กีต้า", "อาโฟ", "อาดัง"],
+            bgs: [{id:'bg-heart',n:'หัวใจ',e:'❤️',c:'#ffeaa7'}, {id:'bg-bolt',n:'สายฟ้า',e:'⚡',c:'#fab1a0'}, {id:'bg-star',n:'ดาว',e:'⭐',c:'#fff9c4'}, {id:'bg-rainbow',n:'สายรุ้ง',e:'🌈',c:'#dff9fb'}, {id:'bg-dog',n:'หมา',e:'🐶',c:'#f5f6fa'}, {id:'bg-cat',n:'แมว',e:'🐱',c:'#f5f6fa'}, {id:'bg-pig',n:'หมู',e:'🐷',c:'#ffdada'}, {id:'bg-chicken',n:'ไก่',e:'🐔',c:'#ffffff'}]
+        };
+
+        let data = { pts: 0, clicks: 0, word: "ต้อม", words: [...MASTER.words.slice(0,9)], music: [], decos: [], bgs: [], shapes: [], currentBG: "none", currentShape: "shape-circle", equippedDecos: [] };
+
+        function login() {
+            const user = document.getElementById('user-in').value.trim();
+            const pass = document.getElementById('pass-in').value.trim();
+            if(!user || !pass) return;
+            let saved = localStorage.getItem('pop_' + user);
+            if(saved) {
+                let p = JSON.parse(saved);
+                if(p.pass === pass) { data = {...data, ...p.data}; start(user); } else alert("รหัสผ่านผิด");
+            } else { save(user, pass, data); start(user); }
+        }
+
+        function start(u) {
+            currentU = u;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('game-content').style.display = 'flex';
+            applyShape(data.currentShape);
+            applyBG(data.currentBG);
+            refreshShop(); refreshUI();
+        }
+
+        function save() {
+            let pass = JSON.parse(localStorage.getItem('pop_'+currentU)).pass;
+            localStorage.setItem('pop_' + currentU, JSON.stringify({ pass, data }));
+        }
+
+        function doClick() {
+            data.pts++; data.clicks++;
+            const btn = document.getElementById('main-button');
+            btn.innerText = data.word;
+            
+            // เพิ่ม Class Animation และเอาออกเมื่อจบ
+            btn.classList.remove('pop-click');
+            void btn.offsetWidth; // Trigger Reflow
+            btn.classList.add('pop-click');
+
+            talk(data.word); refreshUI(); save();
+        }
+
+        function talk(t) { window.speechSynthesis.cancel(); let s = new SpeechSynthesisUtterance(t); s.lang='th-TH'; window.speechSynthesis.speak(s); }
+
+        function applyShape(shapeId) {
+            data.currentShape = shapeId;
+            const btn = document.getElementById('main-button');
+            MASTER.shapes.forEach(s => btn.classList.remove(s.id));
+            btn.classList.add(shapeId);
+        }
+
+        function applyBG(bgId) {
+            data.currentBG = bgId;
+            document.querySelectorAll('.floating-emoji').forEach(e => e.remove());
+            if(bgId === "none") return document.body.style.backgroundColor = "#f1f2f6";
+            let bg = MASTER.bgs.find(b => b.id === bgId) || {e:'✨', c:'#ffeaa7'};
+            document.body.style.backgroundColor = bg.c;
+            for(let i=0; i<12; i++) {
+                let span = document.createElement('span'); span.className = 'floating-emoji'; span.innerText = bg.e;
+                span.style.left = Math.random() * 100 + 'vw'; span.style.animationDuration = (2+Math.random()*3)+'s';
+                document.body.appendChild(span);
+            }
+        }
+
+        function refreshUI() {
+            document.getElementById('points-display').innerText = `แต้ม: ${data.pts.toLocaleString()}`;
+            document.getElementById('total-clicks').innerText = data.clicks.toLocaleString();
+            document.querySelectorAll('.deco-slot').forEach(el => el.style.display = 'none');
+            data.equippedDecos.forEach(id => { if(document.getElementById('deco-'+id)) document.getElementById('deco-'+id).style.display = 'block'; });
+            let side = document.getElementById('music-btns'); side.innerHTML = '';
+            MASTER.music.slice(0, 3).forEach(m => { let b = document.createElement('button'); b.className = 'menu-btn'; b.innerText = "🎵 "+m; b.onclick = () => talk(m); side.appendChild(b); });
+            data.music.forEach(m => { let b = document.createElement('button'); b.className = 'menu-btn'; b.innerText = "🎵 "+m; b.onclick = () => talk(m); side.appendChild(b); });
+            let bar = document.getElementById('word-bar'); bar.innerHTML = '';
+            data.words.forEach(w => { let d = document.createElement('div'); d.className = `word-tag ${w === data.word ? 'active' : ''}`; d.innerText = w; d.onclick = () => { data.word = w; talk(w); refreshUI(); save(); }; bar.appendChild(d); });
+        }
+
+        function refreshShop() {
+            const render = (containerId, list, dataKey, price, isEquipable=false) => {
+                let grid = document.getElementById(containerId); grid.innerHTML = '';
+                list.forEach(item => {
+                    let id = item.id || item; let name = item.n || item;
+                    let owned = data[dataKey === 'equippedDecos' ? 'decos' : dataKey].includes(id) || (dataKey === 'shapes' && id === 'shape-circle');
+                    let eq = (dataKey === 'equippedDecos' ? data.equippedDecos.includes(id) : (dataKey === 'shapes' ? data.currentShape === id : false));
+                    let div = document.createElement('div'); div.className = `item-card ${owned?'owned':''} ${eq?'equipped':''}`;
+                    div.innerText = eq ? `ใช้อยู่` : (owned ? `ใส่ ${name}` : `${name} (${price})`);
+                    div.onclick = () => {
+                        if(owned) {
+                            if(dataKey === 'equippedDecos') { if(eq) data.equippedDecos = data.equippedDecos.filter(x => x !== id); else data.equippedDecos.push(id); }
+                            else if(dataKey === 'shapes') applyShape(id);
+                        } else if(data.pts >= price) {
+                            data.pts -= price;
+                            if(dataKey === 'equippedDecos') { data.decos.push(id); data.equippedDecos.push(id); }
+                            else data[dataKey].push(id);
+                        }
+                        refreshShop(); refreshUI(); save();
+                    };
+                    grid.appendChild(div);
+                });
+            };
+            render('grid-decos', MASTER.decos, 'equippedDecos', 50, true);
+            render('grid-shapes', MASTER.shapes, 'shapes', 200, true);
+            render('grid-words', MASTER.words.slice(9), 'words', 250);
+            render('grid-music', MASTER.music.slice(3), 'music', 100);
+            let bG = document.getElementById('grid-bg'); bG.innerHTML = '';
+            MASTER.bgs.forEach(item => {
+                let owned = data.bgs.includes(item.id); let eq = data.currentBG === item.id;
+                let div = document.createElement('div'); div.className = `item-card ${owned?'owned':''} ${eq?'equipped':''}`;
+                div.innerText = eq ? `ถอด` : (owned ? `ใส่` : `${item.n} (50)`);
+                div.onclick = () => { if(eq) applyBG('none'); else if(owned) applyBG(item.id); else if(data.pts >= 50) { data.pts -= 50; data.bgs.push(item.id); applyBG(item.id); } refreshShop(); save(); };
+                bG.appendChild(div);
+            });
+        }
+
+        function buyCustomWord() { if(data.pts < 300) return alert("แต้มไม่พอ"); let n = prompt("พิมพ์ชื่อที่ต้องการ:"); if(n) { data.pts -= 300; data.words.push(n); refreshShop(); refreshUI(); save(); } }
+        function openUI(id) { if(id === 'rank-ui') { let l = []; for(let i=0; i<localStorage.length; i++) { let k = localStorage.key(i); if(k.startsWith('pop_')) { let obj = JSON.parse(localStorage.getItem(k)); l.push({n:k.replace('pop_',''), c:obj.data.clicks || 0}); } } l.sort((a,b)=>b.c-a.c); document.getElementById('rank-box').innerHTML = l.slice(0,10).map((u,i)=>`<div style="display:flex; justify-content:space-between; padding:10px;"><span>${i+1}. ${u.n}</span><b>${u.c}</b></div>`).join(''); } document.getElementById(id).style.display = 'flex'; }
+        function closeUI(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>
